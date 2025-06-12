@@ -1,12 +1,11 @@
 import random
 from pyrogram import Client, filters
-from config import SUDO_USERS
-from .help import add_command_help
+from .help import add_command_help  # Make sure help.py exists and is working
 
 hl = "!"
 
 @Client.on_message(
-    filters.command("bc", prefixes=hl) & (filters.me | filters.user(SUDO_USERS))
+    filters.command("bc", prefixes=hl) & filters.me
 )
 async def bsdke(client, message):
     bc_pics = [
