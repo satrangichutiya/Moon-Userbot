@@ -1,19 +1,27 @@
+from pyrogram import Client, filters
+from pyrogram.types import Message
 
-# modules/help.py
+# Prefix for commands (change if needed)
+CMD_PREFIX = "!"
 
+# Dictionary to hold help commands
 HELP_COMMANDS = {}
 
-def add_command_help(module_name: str, help_text: str):
+# Function to register module help
+def add_command_help(module_name: str, commands: list):
     """
-    Registers a help command for a given module.
-    Use this in your module like:
-    add_command_help("ModuleName", "Help text here")
+    module_name: Name of the module (str)
+    commands: List of tuples -> [(command, description), ...]
     """
-    module_name = module_name.strip().title()
-    HELP_COMMANDS[module_name] = help_text.strip()
+    HELP_COMMANDS[module_name] = commands
 
-def get_all_modules():
-    return sorted(HELP_COMMANDS)
-
-def get_help(module_name: str):
-    return HELP_COMMANDS.get(module_name.strip().title())
+# Help command to show all help text
+@Client.on_message(filters.command("help", prefixes=CMD_PREFIX) & filters.me)
+async def help_command_handler(client: Client, message: Message):
+    text = "**🌙 Moon UserBot Help Menu**\n\n"
+    for mod_name, cmds in HELP_COMMANDS.items():
+        text += f"🔹 **{mod_name.capitalize()}**\n"
+        for cmd in cmds:
+            text += f"`{CMD_PREFIX}{cmd[0]}` — {cmd[1]}\n"
+        text += "\n"
+    await message.reply(text)
