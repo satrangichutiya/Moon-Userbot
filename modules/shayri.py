@@ -1,56 +1,52 @@
 import random
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import Message
+from config import app  # make sure app is imported from your bot's main instance
 
-# 200+ Shayari List (You can add more shayaris here)
-shayris = [
-    "सपने उस वक्त पूरे होते हैं, जब हमारी आँखों में नींद नहीं होती...",
-    "जिसे हम भूलना चाहते हैं, वह हमें कभी नहीं भूलता...",
-    "तुम्हें देख कर तो बस एक ख्वाब सा लगता है...",
-    "दिल में जगह बहुत है, पर तुम ही सबसे खास हो...",
-    "सपने भी एक दिन सच होंगे, पर उसकी चाहत तुमसे ज्यादा नहीं होगी...",
-    "वो दिल ही क्या, जिसमें तुझे चाहने का ख्वाब न हो...",
-    "हमारी मोहब्बत के सिवा, कुछ भी नहीं मिलता...",
-    "तुमसे जुदा होकर भी हर वक्त तुम्हारी यादों में खोते रहते हैं हम...",
-    "तुम हमारी दुनिया हो, हमारी जिंदगी हो, हमारे ख्वाब हो...",
-    "कभी कभी सोचता हूँ, तेरे बिना जीने की कोशिश करूँ, फिर तेरा ख्याल आता है और जीने का मन करता है...",
-    # Add more shayari...
+# 200+ Hindi Shayari list
+shayaris = [
+    "तू सामने हो और वक्त ठहर जाए, यही ख्वाहिश है मेरी।",
+    "पलकों पे रखा है तुझको, मगर नजरों से दूर ना किया।",
+    "हर किसी को जवाब देना ज़रूरी नहीं होता, कुछ को तो नजरअंदाज करना ही बेहतर है।",
+    "तू पूछ ले सुबह से, ना यकीन हो तो शाम से, ये दिल धड़कता है बस तेरे ही नाम से।",
+    "तेरी मुस्कान ही मेरी पहचान है।",
+    "इतना भी प्यार किसी से ना करना कि वो तुम्हें तोड़ के चला जाए।",
+    "हमारा दिल भी कितना पागल है, हर उस शख्स को चाहता है जो इसका होना नहीं चाहता।",
+    "वो तेरे होने का एहसास अब भी रहता है हर साँस के साथ।",
+    "ख्वाब देखना तो शुरुआत है, उन्हें पूरा करना ही ज़िंदगी है।",
+    "तू पास हो या दूर, तेरी यादें साथ चलती हैं।",
+    # Add more funny/hardcore ones...
 ]
 
-# Initialize bot with your API credentials
-app = Client("shayri_bot")
+# Shayari users set
+shayari_users = set()
 
-# Dictionary to store the users for shayri
-shayri_users = {}
+# Add user to shayari list
+@app.on_message(filters.command("shayri") & filters.me)
+async def add_shayari_user(_, message: Message):
+    if message.reply_to_message:
+        user_id = message.reply_to_message.from_user.id
+        shayari_users.add(user_id)
+        await message.reply(f"✅ User `{user_id}` added for Shayari auto-replies.")
+    else:
+        await message.reply("⚠️ Reply to a user's message to add them.")
 
-# Function to handle shayari auto-reply
-@app.on_message(filters.private)
-async def reply_shayari(client, message: Message):
+# Remove user from shayari list
+@app.on_message(filters.command("del shayri") & filters.me)
+async def remove_shayari_user(_, message: Message):
+    if message.reply_to_message:
+        user_id = message.reply_to_message.from_user.id
+        if user_id in shayari_users:
+            shayari_users.remove(user_id)
+            await message.reply(f"❌ User `{user_id}` removed from Shayari list.")
+        else:
+            await message.reply("⚠️ This user is not in the list.")
+    else:
+        await message.reply("⚠️ Reply to a user's message to remove them.")
+
+# Auto reply with random shayari
+@app.on_message(filters.private & ~filters.me)
+async def auto_shayari_reply(_, message: Message):
     user_id = message.from_user.id
-    if user_id in shayri_users:
-        # Send a random shayari to the user
-        shayari = random.choice(shayris)
-        await message.reply(shayari)
-
-# Command to add users for shayari
-@app.on_message(filters.command('shayri'))
-async def add_shayri_user(client, message: Message):
-    user_id = message.reply_to_message.from_user.id if message.reply_to_message else message.from_user.id
-    if user_id not in shayri_users:
-        shayri_users[user_id] = True
-        await message.reply(f"Shayari updates are now enabled for user {user_id}.")
-    else:
-        await message.reply(f"User {user_id} is already receiving shayari.")
-
-# Command to remove users from shayari list
-@app.on_message(filters.command('del shayri'))
-async def remove_shayri_user(client, message: Message):
-    user_id = message.reply_to_message.from_user.id if message.reply_to_message else message.from_user.id
-    if user_id in shayri_users:
-        del shayri_users[user_id]
-        await message.reply(f"Shayari updates are now removed for user {user_id}.")
-    else:
-        await message.reply(f"User {user_id} was not found in the shayari list.")
-
-# Run the bot
-app.run()
+    if user_id in shayari_users:
+        await message.reply(random.choice(shayaris))
