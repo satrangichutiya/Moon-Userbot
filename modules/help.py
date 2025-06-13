@@ -1,27 +1,39 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
+from config import CMD_HNDLR
 
-# Prefix for commands (change if needed)
-CMD_PREFIX = "!"
-
-# Dictionary to hold help commands
+# Dictionary to store help information
 HELP_COMMANDS = {}
 
-# Function to register module help
-def add_command_help(module_name: str, commands: list):
+def add_command_help(module_name, commands):
     """
-    module_name: Name of the module (str)
-    commands: List of tuples -> [(command, description), ...]
+    Registers commands for help system
+    Format:
+    add_command_help("module", {"command": "description", "command2": "desc2"})
     """
     HELP_COMMANDS[module_name] = commands
 
-# Help command to show all help text
-@Client.on_message(filters.command("help", prefixes=CMD_PREFIX) & filters.me)
-async def help_command_handler(client: Client, message: Message):
-    text = "**🌙 Moon UserBot Help Menu**\n\n"
-    for mod_name, cmds in HELP_COMMANDS.items():
-        text += f"🔹 **{mod_name.capitalize()}**\n"
-        for cmd in cmds:
-            text += f"`{CMD_PREFIX}{cmd[0]}` — {cmd[1]}\n"
-        text += "\n"
-    await message.reply(text)
+@Client.on_message(filters.command("help", prefixes=CMD_HNDLR) & filters.me)
+async def help_handler(client, message: Message):
+    if len(message.command) == 1:
+        # General Help Overview
+        help_text = "**🌐 UserBot Help Menu**\n\n"
+        help_text += "Use `.help modulename` to get command info for a specific module.\n\n"
+        help_text += "**🧩 Available Modules:**\n"
+
+        for module in sorted(HELP_COMMANDS):
+            help_text += f"🔹 `{module}`\n"
+
+        await message.edit(help_text)
+    else:
+        # Specific Module Help
+        module = message.text.split(None, 1)[1].strip().lower()
+
+        if module in HELP_COMMANDS:
+            commands = HELP_COMMANDS[module]
+            help_text = f"**📚 Help for `{module}`**\n\n"
+            for cmd, desc in commands.items():
+                help_text += f"➤ `{CMD_HNDLR}{cmd}` — {desc}\n"
+            await message.edit(help_text)
+        else:
+            await message.edit("🚫 Unknown module name. Use `.help` to see all available modules.")
