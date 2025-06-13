@@ -1,36 +1,77 @@
-import random
+import asyncio
 import time
+import platform
+import psutil
+import socket
+from datetime import datetime
 from pyrogram import Client, filters
-from pyrogram.types import Message
 
-# Stylish emojis and terminal themes
-PONG_EMOJIS = ["⚡", "🚀", "💥", "💫", "🔥", "🌩️", "🔋", "💻", "🧠", "🛰️"]
-STYLES = [
-    "`Connecting to Quantum Core...`",
-    "`Loading Pulse Matrix...`",
-    "`Calculating Time Distortion...`",
-    "`Routing Ping through wormhole...`",
-]
+TRIGGER = "!"  # Change this if your handler is different
 
-@Client.on_message(filters.command("ping", prefixes=["!", "/", "."]) & filters.me)
-async def ultra_ping(client: Client, message: Message):
+def get_readable_time(seconds: int) -> str:
+    count = 0
+    up_time = ""
+    time_list = []
+    time_suffix_list = ["s", "m", "h", "d"]
+
+    while count < 4:
+        count += 1
+        remainder, result = divmod(seconds, 60) if count < 3 else divmod(seconds, 24)
+        seconds = int(remainder)
+        time_list.append(int(result))
+    for i in range(len(time_list)):
+        if time_list[i] != 0:
+            up_time = str(time_list[i]) + time_suffix_list[i] + " " + up_time
+    return up_time.strip()
+
+@Client.on_message(filters.command("ping", prefixes=TRIGGER) & filters.me)
+async def advanced_ping(client, message):
     start = time.time()
+    uptime_seconds = time.time() - psutil.boot_time()
+    uptime = get_readable_time(int(uptime_seconds))
 
-    # 1st message: boot animation
-    anim = await message.reply(random.choice(STYLES))
-    await anim.edit("`Initiating connection...`")
-    await asyncio.sleep(0.5)
-    await anim.edit("`Engaging ping matrix...`")
-    await asyncio.sleep(0.5)
+    # Get basic system info
+    uname = platform.uname()
+    hostname = socket.gethostname()
+    cpu = psutil.cpu_percent()
+    ram = psutil.virtual_memory().percent
 
-    # 2nd message: final ping result
+    animations = [
+        "🔍 Pinging system .",
+        "🔍 Pinging system ..",
+        "🔍 Pinging system ...",
+        "💻 Connecting to core server.",
+        "💻 Connecting to core server..",
+        "💻 Connecting to core server...",
+        "⚙️ Authenticating ping response.",
+        "⚙️ Authenticating ping response..",
+        "⚙️ Authenticating ping response...",
+        "🔧 Finalizing response packet.",
+        "🔧 Finalizing response packet..",
+        "🔧 Finalizing response packet...",
+    ]
+
+    # Run animation
+    temp = await message.reply("`Initializing...`")
+    for frame in animations:
+        await temp.edit_text(f"`{frame}`")
+        await asyncio.sleep(0.2)
+
     end = time.time()
-    ping_speed = round((end - start) * 1000, 2)
+    ping_time = (end - start) * 1000
 
-    emoji = random.choice(PONG_EMOJIS)
-    await anim.edit(
-        f"**{emoji} Pᴏɴɢ!**\n\n"
-        f"📡 Sᴘᴇᴇᴅ: `{ping_speed} ms`\n"
-        f"⚙️ Sᴛᴀᴛᴜs: `System Stable`\n"
-        f"🔗 Powered by: `Moon-X`"
-    )
+    # Aesthetic font + emojis + info
+    result = f"""
+💻 **𝙐𝙡𝙩𝙧𝙖 𝙊𝙋 𝙋𝙞𝙣𝙜 𝙎𝙮𝙨𝙩𝙚𝙢** ⚡
+
+📶 **Ping:** `{int(ping_time)} ms`
+🧠 **CPU Load:** `{cpu}%`
+💾 **RAM Usage:** `{ram}%`
+⏱ **Uptime:** `{uptime}`
+📡 **Host:** `{HOSTNAME}`
+🖥 **OS:** `{uname.system} {uname.release}`
+📍 **Time:** `{datetime.now().strftime('%H:%M:%S')}`
+
+⚔️ Powered by 𝙈𝙊𝙊𝙉-𝙐𝙎𝙀𝙍𝘽𝙊𝙏 🌙
+"""
+    await temp.edit_text(result)
