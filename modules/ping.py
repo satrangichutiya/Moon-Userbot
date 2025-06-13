@@ -1,4 +1,3 @@
-import asyncio
 import time
 import platform
 import psutil
@@ -6,72 +5,76 @@ import socket
 from datetime import datetime
 from pyrogram import Client, filters
 
-TRIGGER = "!"  # Change this if your handler is different
+# Customize your command prefix here
+TRIGGER = "!"
 
+# Helper: Uptime in human-readable format
 def get_readable_time(seconds: int) -> str:
     count = 0
-    up_time = ""
+    result = ''
     time_list = []
-    time_suffix_list = ["s", "m", "h", "d"]
+    suffixes = ["s", "m", "h", "d"]
 
     while count < 4:
         count += 1
-        remainder, result = divmod(seconds, 60) if count < 3 else divmod(seconds, 24)
-        seconds = int(remainder)
-        time_list.append(int(result))
-    for i in range(len(time_list)):
-        if time_list[i] != 0:
-            up_time = str(time_list[i]) + time_suffix_list[i] + " " + up_time
-    return up_time.strip()
+        if count < 3:
+            seconds, remainder = divmod(seconds, 60)
+        else:
+            seconds, remainder = divmod(seconds, 24)
+        time_list.append(int(remainder))
 
+    for i in range(len(time_list)):
+        if time_list[i] > 0:
+            result = str(time_list[i]) + suffixes[i] + " " + result
+    return result.strip()
+
+# Main Ping Command
 @Client.on_message(filters.command("ping", prefixes=TRIGGER) & filters.me)
-async def advanced_ping(client, message):
-    start = time.time()
+async def ultra_ping(client, message):
+    start_time = time.time()
     uptime_seconds = time.time() - psutil.boot_time()
     uptime = get_readable_time(int(uptime_seconds))
 
-    # Get basic system info
+    # System info
     uname = platform.uname()
-    hostname = socket.gethostname()
-    cpu = psutil.cpu_percent()
+    host = socket.gethostname()
+    cpu = psutil.cpu_percent(interval=1)
     ram = psutil.virtual_memory().percent
+    time_now = datetime.now().strftime("%H:%M:%S")
 
-    animations = [
-        "🔍 Pinging system .",
-        "🔍 Pinging system ..",
-        "🔍 Pinging system ...",
-        "💻 Connecting to core server.",
-        "💻 Connecting to core server..",
-        "💻 Connecting to core server...",
-        "⚙️ Authenticating ping response.",
-        "⚙️ Authenticating ping response..",
-        "⚙️ Authenticating ping response...",
-        "🔧 Finalizing response packet.",
-        "🔧 Finalizing response packet..",
-        "🔧 Finalizing response packet...",
+    # Simulated animation
+    animation = [
+        "`> Initializing...`",
+        "`> Pinging .`",
+        "`> Pinging ..`",
+        "`> Pinging ...`",
+        "`> Collecting data.`",
+        "`> Collecting data..`",
+        "`> Collecting data...`",
+        "`> Preparing response.`",
+        "`> Preparing response..`",
+        "`> Preparing response...`"
     ]
+    temp = await message.reply_text("`Launching ping...`")
+    for i in animation:
+        await temp.edit(i)
+        await asyncio.sleep(0.15)
 
-    # Run animation
-    temp = await message.reply("`Initializing...`")
-    for frame in animations:
-        await temp.edit_text(f"`{frame}`")
-        await asyncio.sleep(0.2)
+    end_time = time.time()
+    ping_speed = int((end_time - start_time) * 1000)
 
-    end = time.time()
-    ping_time = (end - start) * 1000
+    # Final reply
+    output = f"""
+✨ **𝙐𝙇𝙏𝙍𝘼 𝙋𝙄𝙉𝙂 𝙍𝙀𝙎𝙋𝙊𝙉𝙎𝙀** ⚡
 
-    # Aesthetic font + emojis + info
-    result = f"""
-💻 **𝙐𝙡𝙩𝙧𝙖 𝙊𝙋 𝙋𝙞𝙣𝙜 𝙎𝙮𝙨𝙩𝙚𝙢** ⚡
-
-📶 **Ping:** `{int(ping_time)} ms`
-🧠 **CPU Load:** `{cpu}%`
-💾 **RAM Usage:** `{ram}%`
-⏱ **Uptime:** `{uptime}`
-📡 **Host:** `{HOSTNAME}`
+📡 **Ping:** `{ping_speed} ms`
+🧠 **CPU:** `{cpu}%`
+💾 **RAM:** `{ram}%`
+🕒 **Uptime:** `{uptime}`
 🖥 **OS:** `{uname.system} {uname.release}`
-📍 **Time:** `{datetime.now().strftime('%H:%M:%S')}`
+📍 **Host:** `{host}`
+🧭 **Time:** `{time_now}`
 
-⚔️ Powered by 𝙈𝙊𝙊𝙉-𝙐𝙎𝙀𝙍𝘽𝙊𝙏 🌙
+⚔️ 𝙋𝙤𝙬𝙚𝙧𝙚𝙙 𝙗𝙮 𝙈𝙊𝙊𝙉-𝙐𝙎𝙀𝙍𝘽𝙊𝙏 🌙
 """
-    await temp.edit_text(result)
+    await temp.edit(output)
