@@ -1,35 +1,36 @@
-#  Moon-Userbot - telegram userbot
-#  Copyright (C) 2020-present Moon Userbot Organization
-#
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-from time import perf_counter
-
+import random
+import time
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-from utils.misc import modules_help, prefix
+# Stylish emojis and terminal themes
+PONG_EMOJIS = ["⚡", "🚀", "💥", "💫", "🔥", "🌩️", "🔋", "💻", "🧠", "🛰️"]
+STYLES = [
+    "`Connecting to Quantum Core...`",
+    "`Loading Pulse Matrix...`",
+    "`Calculating Time Distortion...`",
+    "`Routing Ping through wormhole...`",
+]
 
+@Client.on_message(filters.command("ping", prefixes=["!", "/", "."]) & filters.me)
+async def ultra_ping(client: Client, message: Message):
+    start = time.time()
 
-@Client.on_message(filters.command(["ping", "p"], prefix) & filters.me)
-async def ping(_, message: Message):
-    start = perf_counter()
-    await message.edit("<b>Pong!</b>")
-    end = perf_counter()
-    await message.edit(f"<b>Pong! {round(end - start, 3)}s</b>")
+    # 1st message: boot animation
+    anim = await message.reply(random.choice(STYLES))
+    await anim.edit("`Initiating connection...`")
+    await asyncio.sleep(0.5)
+    await anim.edit("`Engaging ping matrix...`")
+    await asyncio.sleep(0.5)
 
+    # 2nd message: final ping result
+    end = time.time()
+    ping_speed = round((end - start) * 1000, 2)
 
-modules_help["ping"] = {
-    "ping": "Check ping to Telegram servers",
-}
+    emoji = random.choice(PONG_EMOJIS)
+    await anim.edit(
+        f"**{emoji} Pᴏɴɢ!**\n\n"
+        f"📡 Sᴘᴇᴇᴅ: `{ping_speed} ms`\n"
+        f"⚙️ Sᴛᴀᴛᴜs: `System Stable`\n"
+        f"🔗 Powered by: `Moon-X`"
+    )
