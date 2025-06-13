@@ -1,30 +1,36 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-# Store all command help
 HELP_COMMANDS = {}
 
-# Add command help for each module
-def add_command_help(module_name, command_info):
-    HELP_COMMANDS[module_name] = command_info
+def add_command_help(module_name, help_text):
+    HELP_COMMANDS[module_name] = help_text.strip()
 
-@Client.on_message(filters.command("help", prefixes=["!", ".", "/", "#", "?"]) & filters.me)
+# Split into chunks under Telegram limit (e.g., 4000 characters)
+def split_help_chunks():
+    help_list = sorted(HELP_COMMANDS.keys(), key=str.lower)
+    chunks = []
+    chunk = "**📚 Available Modules:**\n\n"
+    for mod in help_list:
+        line = f"🔹 `•─╼⃝𖠁 {mod}`\n"
+        if len(chunk + line) > 4000:
+            chunks.append(chunk)
+            chunk = ""
+        chunk += line
+    if chunk:
+        chunks.append(chunk)
+    return chunks
+
+@Client.on_message(filters.command("help", prefixes=["!", ".", "/"]) & filters.me)
 async def help_command(client, message: Message):
-    args = message.text.split(" ", 1)
-    
+    args = message.text.split(maxsplit=1)
     if len(args) == 1:
-        # Show all modules list
-        help_text = "**📚 Available Modules:**\n\n"
-        for mod in sorted(HELP_COMMANDS.keys()):
-            help_text += f"🔹 `{mod}`\n"
-        help_text += "\nUse `!help <module>` to get help for a specific module."
-        await message.reply_text(help_text)
-    
+        chunks = split_help_chunks()
+        for chunk in chunks:
+            await message.reply_text(chunk)
     else:
-        mod_name = args[1].strip()
-        if mod_name in HELP_COMMANDS:
-            help_text = f"**🧠 Help for `{mod_name}` module:**\n\n"
-            help_text += HELP_COMMANDS[mod_name]
-            await message.reply_text(help_text)
+        module = args[1].strip()
+        if module in HELP_COMMANDS:
+            await message.reply_text(f"**🧠 Help for `{module}` module:**\n\n{HELP_COMMANDS[module]}")
         else:
-            await message.reply_text("❌ Module not found. Try `!help` to see available modules.")
+            await message.reply_text("❌ Unknown module. Try `!help` to see the list.")
