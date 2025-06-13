@@ -1,39 +1,30 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from config import CMD_HNDLR
 
-# Dictionary to store help information
+# Store all command help
 HELP_COMMANDS = {}
 
-def add_command_help(module_name, commands):
-    """
-    Registers commands for help system
-    Format:
-    add_command_help("module", {"command": "description", "command2": "desc2"})
-    """
-    HELP_COMMANDS[module_name] = commands
+# Add command help for each module
+def add_command_help(module_name, command_info):
+    HELP_COMMANDS[module_name] = command_info
 
-@Client.on_message(filters.command("help", prefixes=CMD_HNDLR) & filters.me)
-async def help_handler(client, message: Message):
-    if len(message.command) == 1:
-        # General Help Overview
-        help_text = "**🌐 UserBot Help Menu**\n\n"
-        help_text += "Use `.help modulename` to get command info for a specific module.\n\n"
-        help_text += "**🧩 Available Modules:**\n"
-
-        for module in sorted(HELP_COMMANDS):
-            help_text += f"🔹 `{module}`\n"
-
-        await message.edit(help_text)
+@Client.on_message(filters.command("help", prefixes=["!", ".", "/", "#", "?"]) & filters.me)
+async def help_command(client, message: Message):
+    args = message.text.split(" ", 1)
+    
+    if len(args) == 1:
+        # Show all modules list
+        help_text = "**📚 Available Modules:**\n\n"
+        for mod in sorted(HELP_COMMANDS.keys()):
+            help_text += f"🔹 `{mod}`\n"
+        help_text += "\nUse `!help <module>` to get help for a specific module."
+        await message.reply_text(help_text)
+    
     else:
-        # Specific Module Help
-        module = message.text.split(None, 1)[1].strip().lower()
-
-        if module in HELP_COMMANDS:
-            commands = HELP_COMMANDS[module]
-            help_text = f"**📚 Help for `{module}`**\n\n"
-            for cmd, desc in commands.items():
-                help_text += f"➤ `{CMD_HNDLR}{cmd}` — {desc}\n"
-            await message.edit(help_text)
+        mod_name = args[1].strip()
+        if mod_name in HELP_COMMANDS:
+            help_text = f"**🧠 Help for `{mod_name}` module:**\n\n"
+            help_text += HELP_COMMANDS[mod_name]
+            await message.reply_text(help_text)
         else:
-            await message.edit("🚫 Unknown module name. Use `.help` to see all available modules.")
+            await message.reply_text("❌ Module not found. Try `!help` to see available modules.")
